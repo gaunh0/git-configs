@@ -403,15 +403,25 @@ require('lazy').setup({
 
       -- [[ Configure Telescope ]]
       -- See `:help telescope` and `:help telescope.setup()`
+      local actions = require 'telescope.actions'
       require('telescope').setup {
         -- You can put your default mappings / updates / etc. in here
         --  All the info you're looking for is in `:help telescope.setup()`
         --
-        -- defaults = {
-        --   mappings = {
-        --     i = { ['<c-enter>'] = 'to_fuzzy_refine' },
-        --   },
-        -- },
+        defaults = {
+          mappings = {
+            i = {
+              ['<M-v>'] = actions.select_vertical, -- Alt+v
+              ['<M-s>'] = actions.select_horizontal, -- Alt+s
+              ['<M-t>'] = actions.select_tab, -- Alt+t
+            },
+            n = {
+              ['<M-v>'] = actions.select_vertical,
+              ['<M-s>'] = actions.select_horizontal,
+              ['<M-t>'] = actions.select_tab,
+            },
+          },
+        },
         -- pickers = {}
         extensions = {
           ['ui-select'] = {
@@ -941,7 +951,7 @@ require('lazy').setup({
   { -- Highlight, edit, and navigate code
     'nvim-treesitter/nvim-treesitter',
     build = ':TSUpdate',
-    main = 'nvim-treesitter.configs', -- Sets main module to use for opts
+    main = 'nvim-treesitter', -- Sets main module to use for opts
     -- [[ Configure Treesitter ]] See `:help nvim-treesitter`
     opts = {
       ensure_installed = { 'bash', 'c', 'diff', 'html', 'lua', 'luadoc', 'markdown', 'markdown_inline', 'query', 'vim', 'vimdoc' },
@@ -1011,6 +1021,34 @@ require('lazy').setup({
     },
   },
 })
+-- Floating terminal (scratchpad)
+local floating_term = nil
 
+vim.keymap.set('n', '<leader>tt', function()
+  if floating_term and vim.api.nvim_buf_is_valid(floating_term) then
+    vim.cmd('bd! ' .. floating_term)
+    floating_term = nil
+    return
+  end
+
+  local buf = vim.api.nvim_create_buf(false, true)
+  floating_term = buf
+
+  local width = math.floor(vim.o.columns * 0.7)
+  local height = math.floor(vim.o.lines * 0.4)
+
+  vim.api.nvim_open_win(buf, true, {
+    relative = 'editor',
+    width = width,
+    height = height,
+    col = math.floor((vim.o.columns - width) / 2),
+    row = math.floor((vim.o.lines - height) / 2),
+    style = 'minimal',
+    border = 'rounded',
+  })
+
+  vim.fn.termopen(vim.o.shell)
+  vim.cmd 'startinsert'
+end, { desc = 'Toggle floating terminal' })
 -- The line beneath this is called `modeline`. See `:help modeline`
 -- vim: ts=2 sts=2 sw=2 et
